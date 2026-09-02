@@ -98,9 +98,9 @@ export default function ActivityPage() {
             {/* Summary */}
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
               {[
-                { label: "Commits", value: stats.commits, icon: <GitCommit size={18} /> },
-                { label: "Pull Requests", value: stats.pullRequests, icon: <GitPullRequest size={18} /> },
-                { label: "Issues", value: stats.issues, icon: <AlertCircle size={18} /> },
+                { label: "Commits (14d)", value: stats.commits, icon: <GitCommit size={18} /> },
+                { label: "PRs (14d)", value: stats.pullRequests, icon: <GitPullRequest size={18} /> },
+                { label: "Issues (14d)", value: stats.issues, icon: <AlertCircle size={18} /> },
                 { label: "Contributors", value: stats.contributors, icon: <Users size={18} /> },
               ].map((m) => (
                 <Card key={m.label}>
@@ -120,7 +120,12 @@ export default function ActivityPage() {
             {/* Weekly Activity */}
             <Card>
               <CardHeader className="pb-1">
-                <CardTitle>Coding Activity</CardTitle>
+                <div className="flex items-center justify-between">
+                  <CardTitle>Coding Activity</CardTitle>
+                  <span className="text-[11px] text-text-muted">
+                    Last 14 days
+                  </span>
+                </div>
               </CardHeader>
               <CardContent>
                 <ActivityChart data={weeklyActivity} />

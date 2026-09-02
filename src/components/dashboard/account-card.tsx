@@ -270,14 +270,14 @@ export function AccountCard({
   const langCount = Object.keys(stats.languageRepos).length;
 
   const metrics = [
-    { label: "Commits", value: stats.commits, rating: normalize(stats.commits, 400), unit: "commits" },
+    { label: "Commits (14d)", value: stats.commits, rating: normalize(stats.commits, 400), unit: "commits" },
     { label: "Stars earned", value: stats.stars, rating: normalize(stats.stars, 30), unit: "stars" },
     { label: "Top repo reach", value: topRepoStars, rating: normalize(topRepoStars, 22), unit: "stars" },
-    { label: "Pull requests", value: stats.pullRequests, rating: normalize(stats.pullRequests, 30), unit: "PRs" },
+    { label: "PRs (14d)", value: stats.pullRequests, rating: normalize(stats.pullRequests, 30), unit: "PRs" },
     { label: "Followers", value: stats.followers ?? 0, rating: normalize(stats.followers ?? 0, 76), unit: "followers" },
     { label: "Languages", value: langCount, rating: normalize(langCount, 9.4), unit: "languages" },
     { label: "Contributors", value: stats.contributors, rating: normalize(stats.contributors, 11), unit: "contributors" },
-    { label: "Contributions", value: weeklyTotal, rating: normalize(weeklyTotal, 850), unit: "contributions" },
+    { label: "Contributions (14d)", value: weeklyTotal, rating: normalize(weeklyTotal, 850), unit: "contributions" },
   ];
 
   const starRating = toStars(attrs.versatile);
