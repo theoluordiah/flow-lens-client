@@ -1,18 +1,20 @@
 import client from "./client";
-import type { ChatHistoryItem, ChatMessage, ChatContext } from "@/types";
+import type { ChatHistoryItem, ChatMessage, ChatContext, ReportTone } from "@/types";
 
 export async function sendChatMessage(
   message: string,
   owner?: string,
   repo?: string,
   history?: ChatHistoryItem[],
-  context?: ChatContext
+  context?: ChatContext,
+  tone?: ReportTone
 ): Promise<string> {
   const body: Record<string, unknown> = { message };
   if (owner) body.owner = owner;
   if (repo) body.repo = repo;
   if (history && history.length > 0) body.history = history;
   if (context) body.context = context;
+  if (tone && tone !== "mentor") body.tone = tone;
   const { data } = await client.post<{ answer: string }>("/api/chat", body);
   return data.answer;
 }

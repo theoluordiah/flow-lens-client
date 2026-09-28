@@ -63,8 +63,16 @@ export interface ReportScores {
   overall: number;
 }
 
+export type ReportTone = "mentor" | "roast" | "hype";
+
+export type ScoreKey = Exclude<keyof ReportScores, "overall">;
+
 export interface Report {
   scores: ReportScores;
+  /** How each score was computed from the raw stats. */
+  breakdown?: Partial<Record<ScoreKey, string>>;
+  /** One-line verdict, used on the share card. */
+  headline?: string;
   strengths: string[];
   improvements: string[];
   summary: string;
@@ -73,13 +81,41 @@ export interface Report {
 export interface GetAnalysisResponse {
   report: Report;
   repoStats: Stats;
+  tone: ReportTone;
   createdAt: string;
 }
 
 export interface PostAnalysisResponse {
   report: Report;
   repoStats: Stats;
+  tone: ReportTone;
   cached: boolean;
+}
+
+export interface ShareResponse {
+  slug: string;
+  cardUrl: string;
+  apiUrl: string;
+  imageUrl: string;
+}
+
+export interface PublicCard {
+  user: {
+    username: string;
+    displayName: string;
+    avatarUrl: string;
+    profileUrl: string;
+  } | null;
+  repoFullName: string;
+  tone: ReportTone;
+  scores: ReportScores;
+  breakdown?: Partial<Record<ScoreKey, string>>;
+  headline: string;
+  strengths: string[];
+  improvements: string[];
+  topLanguage: string | null;
+  weeklyActivity: number[];
+  createdAt: string;
 }
 
 export interface DashboardResponse {

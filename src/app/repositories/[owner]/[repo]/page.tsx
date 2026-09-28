@@ -12,6 +12,7 @@ import { ActivityChart } from "@/components/dashboard/activity-chart";
 import { LanguageBreakdown } from "@/components/dashboard/language-breakdown";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ErrorState } from "@/components/ui/empty-states";
+import { AnalysisReport } from "@/components/analysis/analysis-report";
 import { getRepository, getRepositoryStats } from "@/api/repositories";
 import { ExternalLink, GitCommit, GitPullRequest, AlertCircle, Users, Star, GitFork } from "lucide-react";
 import type { RepoLite, Stats } from "@/types";
@@ -137,11 +138,16 @@ export default function RepositoryDetailPage() {
           )}
 
           {/* Tabs */}
-          <Tabs defaultValue="activity">
+          <Tabs defaultValue="report">
             <TabsList>
+              <TabsTrigger value="report">AI Report</TabsTrigger>
               <TabsTrigger value="activity">Activity</TabsTrigger>
               <TabsTrigger value="languages">Languages</TabsTrigger>
             </TabsList>
+
+            <TabsContent value="report">
+              <AnalysisReport owner={owner} repo={repo} />
+            </TabsContent>
 
             <TabsContent value="activity">
               {stats ? (

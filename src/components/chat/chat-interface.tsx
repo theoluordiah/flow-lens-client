@@ -14,7 +14,8 @@ import {
 } from "@/components/ui/select";
 import { MessageSquare, Send, User, Brain, FolderGit2 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import type { ChatMessage, RepoLite } from "@/types";
+import { ToneToggle } from "@/components/analysis/tone-toggle";
+import type { ChatMessage, RepoLite, ReportTone } from "@/types";
 
 const accountPrompts = [
   "Which repository needs attention?",
@@ -123,6 +124,8 @@ export function ChatInterface({
   onSelectRepo,
   repos,
   contextLabel,
+  tone,
+  onToneChange,
 }: {
   messages: ChatMessage[];
   sending: boolean;
@@ -131,6 +134,8 @@ export function ChatInterface({
   onSelectRepo: (repo: RepoLite | null) => void;
   repos: RepoLite[];
   contextLabel?: string;
+  tone?: ReportTone;
+  onToneChange?: (tone: ReportTone) => void;
 }) {
   const [input, setInput] = useState("");
   const bottomRef = useRef<HTMLDivElement>(null);
@@ -156,29 +161,34 @@ export function ChatInterface({
   return (
     <Card className="flex flex-col h-[calc(100vh-12rem)]">
       <CardHeader className="pb-3">
-        <div className="flex items-center justify-between gap-3">
+        <div className="flex flex-wrap items-center justify-between gap-3">
           <CardTitle className="flex items-center gap-2">
             <MessageSquare size={16} className="text-accent" />
             Ask FlowLens
           </CardTitle>
-          <Select
-            value={selectedRepo?.full_name ?? "all"}
-            onValueChange={(value) =>
-              onSelectRepo(repos.find((r) => r.full_name === value) ?? null)
-            }
-          >
-            <SelectTrigger className="w-[220px] h-8 text-xs">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Entire account</SelectItem>
-              {repos.map((repo) => (
-                <SelectItem key={repo.id} value={repo.full_name}>
-                  {repo.full_name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <div className="flex flex-wrap items-center gap-2">
+            {tone && onToneChange && (
+              <ToneToggle value={tone} onChange={onToneChange} disabled={sending} />
+            )}
+            <Select
+              value={selectedRepo?.full_name ?? "all"}
+              onValueChange={(value) =>
+                onSelectRepo(repos.find((r) => r.full_name === value) ?? null)
+              }
+            >
+              <SelectTrigger className="w-[220px] h-8 text-xs">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Entire account</SelectItem>
+                {repos.map((repo) => (
+                  <SelectItem key={repo.id} value={repo.full_name}>
+                    {repo.full_name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
         </div>
         {contextLabel && (
           <div className="flex items-center gap-1.5 text-xs text-text-muted mt-1">

@@ -2,7 +2,7 @@
 
 import { useState, useCallback } from "react";
 import { sendChatMessage } from "@/api/chat";
-import type { ChatHistoryItem, ChatMessage, ChatContext } from "@/types";
+import type { ChatHistoryItem, ChatMessage, ChatContext, ReportTone } from "@/types";
 
 export function useChat() {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -10,7 +10,13 @@ export function useChat() {
   const [error, setError] = useState<string | null>(null);
 
   const send = useCallback(
-    async (message: string, owner?: string, repo?: string, context?: ChatContext) => {
+    async (
+      message: string,
+      owner?: string,
+      repo?: string,
+      context?: ChatContext,
+      tone?: ReportTone
+    ) => {
       const userMsg: ChatMessage = {
         id: `user-${Date.now()}`,
         role: "user",
@@ -26,7 +32,7 @@ export function useChat() {
         .map((m) => ({ role: m.role, content: m.content }));
 
       try {
-        const answer = await sendChatMessage(message, owner, repo, history, context);
+        const answer = await sendChatMessage(message, owner, repo, history, context, tone);
         const assistantMsg: ChatMessage = {
           id: `assistant-${Date.now()}`,
           role: "assistant",

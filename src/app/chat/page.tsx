@@ -9,7 +9,7 @@ import { useChat } from "@/hooks/use-chat";
 import { useRepositories } from "@/hooks/use-repositories";
 import { useAccountStats } from "@/hooks/use-account-stats";
 import { buildAccountChatContext } from "@/lib/utils";
-import type { RepoLite } from "@/types";
+import type { RepoLite, ReportTone } from "@/types";
 
 export default function ChatPage() {
   const { user, loading: authLoading } = useAuth();
@@ -21,6 +21,7 @@ export default function ChatPage() {
     fetchRepositories,
   } = useRepositories();
   const [selectedRepo, setSelectedRepo] = useState<RepoLite | null>(null);
+  const [tone, setTone] = useState<ReportTone>("mentor");
 
   useEffect(() => {
     if (!authLoading && !user) router.replace("/login");
@@ -43,7 +44,8 @@ export default function ChatPage() {
       message,
       selectedRepo?.owner,
       selectedRepo?.name,
-      context
+      context,
+      tone
     );
   };
 
@@ -67,6 +69,8 @@ export default function ChatPage() {
           selectedRepo={selectedRepo}
           onSelectRepo={setSelectedRepo}
           repos={repositoryOptions}
+          tone={tone}
+          onToneChange={setTone}
           contextLabel={
             selectedRepo
               ? `${selectedRepo.owner}/${selectedRepo.name}`
