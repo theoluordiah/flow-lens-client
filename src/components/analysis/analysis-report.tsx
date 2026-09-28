@@ -8,6 +8,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { EmptyState, ErrorState } from "@/components/ui/empty-states";
 import { ToneToggle } from "./tone-toggle";
 import { ScoreBars, ScoreRing } from "./score-display";
+import { DownloadPngButton } from "./download-png-button";
 import {
   generateAnalysis,
   getAnalysis,
@@ -75,9 +76,11 @@ function CopyButton({ text, label }: { text: string; label: string }) {
 
 function SharePanel({
   share,
+  filename,
   onUnshare,
 }: {
   share: ShareResponse;
+  filename: string;
   onUnshare: () => void;
 }) {
   return (
@@ -100,9 +103,10 @@ function SharePanel({
           <div className="space-y-2">
             <p className="text-sm font-medium text-text-primary">Your card is public</p>
             <p className="text-xs text-text-muted max-w-xs">
-              Anyone with the link can see this report. Add the image to your GitHub README to show it off.
+              Anyone with the link can see this report. Download the PNG for slides and socials, or add the badge to your GitHub README.
             </p>
             <div className="flex flex-wrap gap-2 pt-1">
+              <DownloadPngButton imageUrl={share.imageUrl} filename={filename} variant="default" />
               <CopyButton text={share.cardUrl} label="Copy link" />
               <CopyButton
                 text={`[![FlowLens score](${share.imageUrl})](${share.cardUrl})`}
@@ -243,7 +247,7 @@ export function AnalysisReport({ owner, repo }: { owner: string; repo: string })
                   ? "Ready for your hype-up?"
                   : "No report yet"
             }
-            description="FlowLens scores your last two weeks of activity and explains what to improve next."
+            description="FlowLens scores your last six weeks of activity and explains what to improve next."
             action={{ label: "Generate report", onClick: () => generate(false) }}
           />
         ) : (
@@ -313,7 +317,13 @@ export function AnalysisReport({ owner, repo }: { owner: string; repo: string })
             </div>
 
             <AnimatePresence>
-              {share && <SharePanel share={share} onUnshare={handleUnshare} />}
+              {share && (
+                <SharePanel
+                  share={share}
+                  filename={`flowlens-${repo}-${tone}.png`}
+                  onUnshare={handleUnshare}
+                />
+              )}
             </AnimatePresence>
           </motion.div>
         )}

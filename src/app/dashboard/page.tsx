@@ -85,7 +85,7 @@ export default function DashboardPage() {
                   <div className="flex items-center justify-between">
                     <CardTitle>Coding Activity</CardTitle>
                     <span className="text-[11px] text-text-muted">
-                      Last 2 weeks
+                      Last 6 weeks
                     </span>
                   </div>
                 </CardHeader>

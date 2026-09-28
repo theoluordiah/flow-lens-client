@@ -115,9 +115,9 @@ export default function RepositoryDetailPage() {
           {stats && (
             <div className="grid grid-cols-3 gap-3 sm:grid-cols-6">
               {[
-                { label: "Commits (14d)", value: stats.commits, icon: <GitCommit size={16} /> },
-                { label: "PRs (14d)", value: stats.pullRequests, icon: <GitPullRequest size={16} /> },
-                { label: "Issues (14d)", value: stats.issues, icon: <AlertCircle size={16} /> },
+                { label: "Commits (6w)", value: stats.commits, icon: <GitCommit size={16} /> },
+                { label: "PRs (6w)", value: stats.pullRequests, icon: <GitPullRequest size={16} /> },
+                { label: "Issues (6w)", value: stats.issues, icon: <AlertCircle size={16} /> },
                 { label: "Contributors", value: stats.contributors, icon: <Users size={16} /> },
                 { label: "Stars", value: stats.stars, icon: <Star size={16} /> },
                 { label: "Forks", value: stats.forks, icon: <GitFork size={16} /> },
@@ -156,7 +156,7 @@ export default function RepositoryDetailPage() {
                     <div className="flex items-center justify-between">
                       <CardTitle>Coding Activity</CardTitle>
                       <span className="text-[11px] text-text-muted">
-                        Last 14 days
+                        Last 6 weeks
                       </span>
                     </div>
                   </CardHeader>

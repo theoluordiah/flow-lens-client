@@ -9,6 +9,8 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ScoreBars, ScoreRing } from "@/components/analysis/score-display";
 import { TONES } from "@/components/analysis/tone-toggle";
+import { DownloadPngButton } from "@/components/analysis/download-png-button";
+import { API_BASE } from "@/api/client";
 import { getPublicCard } from "@/api/analysis";
 import { ArrowRight, ThumbsUp, Target } from "lucide-react";
 import { GithubIcon } from "@/components/ui/github-icon";
@@ -123,13 +125,19 @@ export default function PublicCardPage() {
                   {new Date(card.createdAt).toLocaleDateString()}
                 </span>
               </div>
-              <Button asChild size="sm">
-                <Link href="/login">
-                  <GithubIcon className="h-4 w-4" />
-                  Get your own score
-                  <ArrowRight size={14} />
-                </Link>
-              </Button>
+              <div className="flex flex-wrap gap-2">
+                <DownloadPngButton
+                  imageUrl={`${API_BASE}/api/card/${slug}/image.svg`}
+                  filename={`flowlens-${card.repoFullName.split("/").pop()}-${card.tone}.png`}
+                />
+                <Button asChild size="sm">
+                  <Link href="/login">
+                    <GithubIcon className="h-4 w-4" />
+                    Get your own score
+                    <ArrowRight size={14} />
+                  </Link>
+                </Button>
+              </div>
             </div>
           </motion.div>
         )}
