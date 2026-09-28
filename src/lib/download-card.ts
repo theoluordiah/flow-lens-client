@@ -3,8 +3,10 @@
  * Done in the browser so the card uses the viewer's fonts and emoji.
  */
 export async function downloadCardPng(svgUrl: string, filename: string, scale = 3): Promise<void> {
-  const res = await fetch(svgUrl);
-  if (!res.ok) throw new Error("Couldn't load the card image");
+  // no-store: the <img> preview may have cached this response without CORS headers,
+  // and reusing that cached copy would make the fetch fail.
+  const res = await fetch(svgUrl, { cache: "no-store", mode: "cors" });
+  if (!res.ok) throw new Error(`Couldn't load the card image (HTTP ${res.status})`);
   const svgBlob = new Blob([await res.text()], { type: "image/svg+xml" });
   const svgObjectUrl = URL.createObjectURL(svgBlob);
 

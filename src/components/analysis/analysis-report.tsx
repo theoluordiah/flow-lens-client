@@ -26,6 +26,7 @@ import {
   ThumbsUp,
   Target,
 } from "lucide-react";
+import { API_BASE } from "@/api/client";
 import type { Report, ReportTone, ShareResponse } from "@/types";
 
 const LOADING_LINES: Record<ReportTone, string[]> = {
@@ -83,6 +84,7 @@ function SharePanel({
   filename: string;
   onUnshare: () => void;
 }) {
+  const imageUrl = `${API_BASE}/api/card/${share.slug}/image.svg`;
   return (
     <motion.div
       initial={{ opacity: 0, height: 0 }}
@@ -94,7 +96,7 @@ function SharePanel({
         <div className="flex flex-col md:flex-row gap-4 md:items-center">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
-            src={share.imageUrl}
+            src={imageUrl}
             alt="Shareable FlowLens score card"
             width={480}
             height={230}
@@ -106,10 +108,10 @@ function SharePanel({
               Anyone with the link can see this report. Download the PNG for slides and socials, or add the badge to your GitHub README.
             </p>
             <div className="flex flex-wrap gap-2 pt-1">
-              <DownloadPngButton imageUrl={share.imageUrl} filename={filename} variant="default" />
+              <DownloadPngButton imageUrl={imageUrl} filename={filename} variant="default" />
               <CopyButton text={share.cardUrl} label="Copy link" />
               <CopyButton
-                text={`[![FlowLens score](${share.imageUrl})](${share.cardUrl})`}
+                text={`[![FlowLens score](${imageUrl})](${share.cardUrl})`}
                 label="Copy README badge"
               />
               <Button size="sm" variant="ghost" asChild>

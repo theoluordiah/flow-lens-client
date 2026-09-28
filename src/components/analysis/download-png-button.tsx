@@ -17,21 +17,31 @@ export function DownloadPngButton({
   size?: ButtonProps["size"];
 }) {
   const [state, setState] = useState<"idle" | "working" | "done" | "error">("idle");
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const handleClick = async () => {
     setState("working");
+    setErrorMessage(null);
     try {
       await downloadCardPng(imageUrl, filename);
       setState("done");
-    } catch {
-      setState("error");
-    } finally {
       setTimeout(() => setState("idle"), 2000);
+    } catch (err) {
+      console.error("[FlowLens] PNG download failed:", err);
+      setErrorMessage(err instanceof Error ? err.message : "Download failed");
+      setState("error");
+      setTimeout(() => setState("idle"), 4000);
     }
   };
 
   return (
-    <Button variant={variant} size={size} onClick={handleClick} disabled={state === "working"}>
+    <Button
+      variant={variant}
+      size={size}
+      onClick={handleClick}
+      disabled={state === "working"}
+      title={errorMessage ?? undefined}
+    >
       {state === "done" ? <Check size={14} /> : <Download size={14} />}
       {state === "working"
         ? "Preparing…"
