@@ -18,19 +18,19 @@ import { ToneToggle } from "@/components/analysis/tone-toggle";
 import type { ChatMessage, RepoLite, ReportTone } from "@/types";
 
 const accountPrompts = [
-  "Which repository needs attention?",
+  "Where am I weakest right now?",
   "What should I focus on this week?",
+  "Which repository needs attention?",
   "What are my strongest areas?",
-  "How can I improve my consistency?",
-  "What does my recent activity suggest?",
+  "How can I commit more consistently?",
 ];
 
 const repoPrompts = [
-  "What is the state of this repository?",
-  "Which areas of this repo need work?",
+  "What is holding this repo's score back?",
+  "What should I do first to improve it?",
+  "Make me a plan for the next six weeks.",
+  "Why is my weakest score so low?",
   "Summarize recent activity in this repo.",
-  "What does the code here look like?",
-  "How should I improve this repository?",
 ];
 
 function Markdown({ content }: { content: string }) {

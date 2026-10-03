@@ -9,6 +9,7 @@ import { EmptyState, ErrorState } from "@/components/ui/empty-states";
 import { ToneToggle } from "./tone-toggle";
 import { ScoreBars, ScoreRing } from "./score-display";
 import { DownloadPngButton } from "./download-png-button";
+import { GrowthPlanPanel } from "./growth-plan";
 import {
   generateAnalysis,
   getAnalysis,
@@ -274,6 +275,8 @@ export function AnalysisReport({ owner, repo }: { owner: string; repo: string })
                 <p className="text-sm text-text-secondary mt-1">{report.summary}</p>
               </blockquote>
             )}
+
+            <GrowthPlanPanel plan={report.growthPlan} focus={report.focus} />
 
             <div className="grid gap-4 md:grid-cols-2 mt-6">
               <div className="rounded-[var(--radius-md)] border border-border p-4">

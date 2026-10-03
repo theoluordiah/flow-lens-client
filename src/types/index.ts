@@ -76,6 +76,26 @@ export interface Report {
   strengths: string[];
   improvements: string[];
   summary: string;
+  /** Plain-language explanation of the weakest area and where to start. */
+  focus?: string;
+  /** Concrete next steps, each measured against the scoring formula. */
+  growthPlan?: GrowthPlan;
+}
+
+export interface GrowthStep {
+  id: string;
+  area: ScoreKey;
+  action: string;
+  detail: string;
+  overallFrom: number;
+  overallTo: number;
+  changes: { key: ScoreKey; from: number; to: number }[];
+}
+
+export interface GrowthPlan {
+  weakest: { key: ScoreKey; score: number };
+  steps: GrowthStep[];
+  combinedOverall: number;
 }
 
 export interface GetAnalysisResponse {

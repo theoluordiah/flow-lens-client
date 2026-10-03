@@ -27,6 +27,7 @@ import {
   Check,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { downloadPlayerCardPng } from "@/lib/download-card";
 import type { User, AccountStats, RepoLite } from "@/types";
 
 type Tier = "MYTHIC" | "GOLD" | "SILVER" | "BRONZE";
@@ -257,6 +258,7 @@ export function AccountCard({
 }) {
   const [copied, setCopied] = useState(false);
   const [duelResult, setDuelResult] = useState<string | null>(null);
+  const [downloadState, setDownloadState] = useState<"idle" | "working" | "done" | "error">("idle");
 
   const attrs = computeAttrs(stats);
   const overall = Math.round(
@@ -303,22 +305,37 @@ export function AccountCard({
     }
   };
 
-  const downloadCard = () => {
-    const punch = [...playstyles].join(", ");
-    const lines = [
-      `${user.displayName || user.username} (@${user.username}) — ${tc.label} PLAYER CARD`,
-      `Rating ${overall}/99 · ${positionMap[topAttr]} · ${archetypeNames[topAttr]}`,
-      `Playstyles: ${punch || "Rising talent"}`,
-      "",
-      ...metrics.map((m) => `${m.label}: ${m.value.toLocaleString()} ${m.unit} (${m.rating})`),
-    ];
-    const blob = new Blob([lines.join("\n")], { type: "text/plain;charset=utf-8" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `${user.username}-flowlens-card.txt`;
-    a.click();
-    URL.revokeObjectURL(url);
+  const downloadCard = async () => {
+    setDownloadState("working");
+    try {
+      await downloadPlayerCardPng(
+        {
+          displayName: user.displayName || user.username,
+          username: user.username,
+          avatarUrl: user.avatarUrl,
+          tierLabel: tc.label,
+          tierColor: tc.stroke,
+          overall,
+          position: positionMap[topAttr],
+          archetype: archetypeNames[topAttr],
+          tagline: attributesArchetypeLine(attrs),
+          quote: `${archetypeNames[topAttr]}: ${tc.desc.toLowerCase()}.`,
+          attributes: attrMeta.map(({ key, label }) => ({ label, value: attrs[key] })),
+          traits: [
+            { label: "Skill Moves", value: "★".repeat(starRating) },
+            { label: "Weak Foot", value: "★".repeat(weakFoot) },
+            { label: "Work Rate", value: WorkRate(attrs) },
+          ],
+          playstyles: playstyles.length > 0 ? playstyles : ["Rising talent"],
+        },
+        `${user.username}-flowlens-card.png`
+      );
+      setDownloadState("done");
+    } catch (err) {
+      console.error("[FlowLens] Player card PNG download failed:", err);
+      setDownloadState("error");
+    }
+    setTimeout(() => setDownloadState("idle"), 2000);
   };
 
   const duel = () => {
@@ -398,10 +415,17 @@ export function AccountCard({
               </button>
               <button
                 onClick={downloadCard}
-                className="flex items-center justify-center gap-1.5 rounded-md border border-border bg-surface-secondary px-2 py-2 text-[10px] font-semibold uppercase tracking-wider text-text-secondary hover:border-border-hover"
+                disabled={downloadState === "working"}
+                className="flex items-center justify-center gap-1.5 rounded-md border border-border bg-surface-secondary px-2 py-2 text-[10px] font-semibold uppercase tracking-wider text-text-secondary hover:border-border-hover disabled:opacity-60"
               >
-                <Download size={12} />
-                Card
+                {downloadState === "done" ? <Check size={12} /> : <Download size={12} />}
+                {downloadState === "working"
+                  ? "Saving…"
+                  : downloadState === "done"
+                    ? "Saved"
+                    : downloadState === "error"
+                      ? "Failed"
+                      : "PNG"}
               </button>
               <button
                 onClick={duel}
