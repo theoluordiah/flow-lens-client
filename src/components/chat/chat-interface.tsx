@@ -30,7 +30,7 @@ const repoPrompts = [
   "What should I do first to improve it?",
   "Make me a plan for the next six weeks.",
   "Why is my weakest score so low?",
-  "Summarize recent activity in this repo.",
+  "What are the worst bugs in this code?",
 ];
 
 function Markdown({ content }: { content: string }) {

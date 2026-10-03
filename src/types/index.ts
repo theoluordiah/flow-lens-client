@@ -186,3 +186,46 @@ export interface ChatMessage {
 export interface RepositoryStatsResponse {
   stats: Stats;
 }
+
+export type FindingSeverity = "high" | "medium" | "low";
+
+export interface ReviewFinding {
+  id: string;
+  /** "check" comes from FlowLens' fixed rules, "ai" from the model reading the code. */
+  source: "check" | "ai";
+  severity: FindingSeverity;
+  category: string;
+  title: string;
+  explanation: string;
+  fix: string;
+  file?: string;
+  line?: number;
+  /** The real line of code an AI finding points at. */
+  evidence?: string;
+  fingerprint: string;
+  dismissed: boolean;
+}
+
+export interface RepoFacts {
+  fileCount: number;
+  sourceFileCount: number;
+  testFileCount: number;
+  hasReadme: boolean;
+  hasTests: boolean;
+  hasCi: boolean;
+  hasGitignore: boolean;
+  hasLicense: boolean;
+}
+
+export interface CodeReview {
+  sha: string;
+  branch: string;
+  tone: ReportTone;
+  summary: string;
+  aiReviewed: boolean;
+  filesReviewed: string[];
+  findings: ReviewFinding[];
+  facts: RepoFacts;
+  createdAt: string;
+  cached: boolean;
+}

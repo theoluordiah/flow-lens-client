@@ -41,8 +41,14 @@ export function useChat() {
         };
         setMessages((prev) => [...prev, assistantMsg]);
       } catch (err: unknown) {
+        // Prefer the server's sentence (e.g. a busy AI provider), but not bare codes like "github_unauthorized".
+        const serverMsg = (err as { response?: { data?: { error?: unknown } } })?.response?.data?.error;
         const msg =
-          err instanceof Error ? err.message : "Failed to get response";
+          typeof serverMsg === "string" && serverMsg.includes(" ")
+            ? serverMsg
+            : err instanceof Error
+              ? err.message
+              : "Failed to get response";
         setError(msg);
       } finally {
         setSending(false);
