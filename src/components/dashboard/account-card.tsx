@@ -49,12 +49,12 @@ const tierConfig: Record<Tier, { label: string; bg: string; border: string; text
 type AttrKey = "actual" | "velocity" | "synergy" | "versatile" | "reach" | "sustain";
 
 const attrMeta: { key: AttrKey; label: string; icon: typeof Hammer; sub: string }[] = [
-  { key: "actual", label: "ACTUAL", icon: Hammer, sub: "Code Output" },
-  { key: "velocity", label: "VELOCITY", icon: Gauge, sub: "Peak Pace" },
-  { key: "synergy", label: "SYNERGY", icon: Users, sub: "Collaboration" },
-  { key: "versatile", label: "VERSATILE", icon: Boxes, sub: "Languages × Repos" },
-  { key: "reach", label: "REACH", icon: Rocket, sub: "Repo Impact" },
-  { key: "sustain", label: "SUSTAIN", icon: BatteryCharging, sub: "Endurance" },
+  { key: "actual", label: "Commits", icon: Hammer, sub: "Total commits in the last 6 weeks" },
+  { key: "velocity", label: "Peak week", icon: Gauge, sub: "Commits in your busiest week" },
+  { key: "synergy", label: "Collaboration", icon: Users, sub: "Pull requests plus contributors" },
+  { key: "versatile", label: "Languages", icon: Boxes, sub: "Languages and repos you work across" },
+  { key: "reach", label: "Impact", icon: Rocket, sub: "Stars, forks and issues on your repos" },
+  { key: "sustain", label: "Weekly average", icon: BatteryCharging, sub: "Average contributions per week" },
 ];
 
 const positionMap: Record<AttrKey, string> = {
@@ -463,7 +463,9 @@ export function AccountCard({
 
         <div className="rounded-xl border border-border bg-surface p-5">
           <h3 className="text-sm font-semibold text-text-primary mb-1">Distribution</h3>
-          <p className="text-[10px] text-text-muted mb-2">Six developer attributes scaled over a 50–100 band.</p>
+          <p className="text-[10px] text-text-muted mb-2">
+            {attrMeta.map((a) => `${a.label}: ${a.sub.toLowerCase()}`).join(". ")}.
+          </p>
           <div className="h-[280px]">
             <ResponsiveContainer width="100%" height="100%">
               <RadarChart data={radarData} outerRadius="72%">

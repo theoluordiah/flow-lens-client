@@ -210,8 +210,8 @@ export async function downloadPlayerCardPng(card: PlayerCardData, filename: stri
     ctx.fillStyle = soft;
     ctx.font = `700 11px ${FONT}`;
     ctx.fillText(a.label, x, y);
-    const barX = x + 88;
-    const barW = colW - 88 - 32;
+    const barX = x + 104;
+    const barW = colW - 104 - 32;
     ctx.fillStyle = track;
     ctx.beginPath();
     ctx.roundRect(barX, y - 8, barW, 7, 3.5);
