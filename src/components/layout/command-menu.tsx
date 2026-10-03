@@ -12,6 +12,7 @@ import {
   Settings,
   Search,
   X,
+  SquareTerminal,
 } from "lucide-react";
 
 interface CommandMenuProps {
@@ -31,6 +32,7 @@ const commands: CommandItem[] = [
   { label: "Go to Activity", href: "/activity", icon: <Activity size={16} />, keywords: ["commits", "pull requests"] },
   { label: "Go to Repositories", href: "/repositories", icon: <FolderGit2 size={16} />, keywords: ["repos", "projects"] },
   { label: "Ask FlowLens", href: "/chat", icon: <MessageSquare size={16} />, keywords: ["chat", "question", "ai"] },
+  { label: "Open Profile Builder", href: "/profile-builder", icon: <SquareTerminal size={16} />, keywords: ["readme", "profile", "portrait", "ascii", "heatmap"] },
   { label: "Go to Settings", href: "/settings", icon: <Settings size={16} />, keywords: ["preferences", "account"] },
 ];
 

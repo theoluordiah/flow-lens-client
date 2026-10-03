@@ -15,6 +15,7 @@ import {
   ChevronLeft,
   ChevronRight,
   PanelLeft,
+  SquareTerminal,
 } from "lucide-react";
 import { GithubIcon } from "@/components/ui/github-icon";
 import type { User } from "@/types";
@@ -31,6 +32,7 @@ const navItems: NavItem[] = [
   { label: "Activity", href: "/activity", icon: <Activity size={18} />, group: "Analytics" },
   { label: "Repositories", href: "/repositories", icon: <FolderGit2 size={18} />, group: "Analytics" },
   { label: "Ask FlowLens", href: "/chat", icon: <MessageSquare size={18} />, group: "Tools" },
+  { label: "Profile Builder", href: "/profile-builder", icon: <SquareTerminal size={18} />, group: "Tools" },
   { label: "GitHub", href: "/github", icon: <GithubIcon width={18} height={18} />, group: "Account" },
   { label: "Settings", href: "/settings", icon: <Settings size={18} />, group: "Account" },
 ];
