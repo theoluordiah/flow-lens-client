@@ -39,14 +39,19 @@ export async function downloadCardPng(svgUrl: string, filename: string, scale = 
 }
 
 function savePng(png: Blob, filename: string): void {
-  const pngUrl = URL.createObjectURL(png);
+  saveBlob(png, filename.endsWith(".png") ? filename : `${filename}.png`);
+}
+
+/** Triggers a browser download for any blob. */
+export function saveBlob(blob: Blob, filename: string): void {
+  const url = URL.createObjectURL(blob);
   const link = document.createElement("a");
-  link.href = pngUrl;
-  link.download = filename.endsWith(".png") ? filename : `${filename}.png`;
+  link.href = url;
+  link.download = filename;
   document.body.appendChild(link);
   link.click();
   link.remove();
-  setTimeout(() => URL.revokeObjectURL(pngUrl), 1000);
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
 export interface PlayerCardData {

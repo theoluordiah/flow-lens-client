@@ -34,3 +34,27 @@ You can check out [the Next.js GitHub repository](https://github.com/vercel/next
 The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
 
 Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+
+## Profile Builder
+
+`/profile-builder` (sidebar → Tools) creates a GitHub profile README: a terminal-style
+developer card, an optional animated ASCII portrait and a contribution heatmap, exported as
+self-contained SVGs plus `README.md` (individually or as one `.zip`).
+
+- **Generation happens in the browser** (`src/lib/profile/`). Photos are converted to ASCII
+  on a canvas and are never uploaded or stored; only the generated ASCII text is saved
+  with the profile.
+- **Contribution data is real**: the backend reads GitHub's GraphQL `contributionCalendar`
+  with the user's existing FlowLens sign-in (`GET /api/profile/contributions`). If it can't
+  be retrieved, the heatmap is omitted rather than estimated.
+- **Saved profiles** live on the backend (`GET/PUT/DELETE /api/profile`); an unsaved draft
+  is also kept in `localStorage`.
+- **SVG safety**: user text is escaped, links are restricted to `https:`/`http:`/`mailto:`,
+  and every SVG is checked (no scripts, event handlers, external references) before preview
+  or export. Animations are CSS inside the SVG with a `prefers-reduced-motion` fallback, and
+  every animated element is visible in its base style, so non-animating clients show the
+  final frame.
+- FlowLens never commits to the user's GitHub repositories.
+
+No new environment variables. `npm test` runs the generator unit tests (`tsx --test`;
+`tsx` is the only new dev dependency).
