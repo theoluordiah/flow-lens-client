@@ -41,9 +41,10 @@ function readDraft(username: string): { profile: ProfileConfig; at: string } | n
 
 /** ASCII for a photo held in memory, using the theme to decide which tones are dense. */
 function asciiFor(img: HTMLImageElement, p: ProfileConfig): string[] {
-  const { columns, contrast, brightness, charset, invert } = p.portrait;
+  const { columns, contrast, brightness, charset, invert, enhance } = p.portrait;
   return imageToAscii(img, columns, {
     charset,
+    autoLevel: enhance,
     contrast,
     brightness,
     invert: invert !== THEMES[p.theme].light,
@@ -133,7 +134,7 @@ export function useProfileBuilder(user: User | null) {
       }
       const portraitInputsChanged =
         next.theme !== prev.theme ||
-        (["columns", "contrast", "brightness", "charset", "invert"] as const).some((k) => next.portrait[k] !== prev.portrait[k]);
+        (["columns", "contrast", "brightness", "charset", "invert", "enhance"] as const).some((k) => next.portrait[k] !== prev.portrait[k]);
       if (photo && portraitInputsChanged) {
         try {
           return { ...next, portrait: { ...next.portrait, ascii: asciiFor(photo.img, next) } };

@@ -52,19 +52,56 @@ export function portraitLayout(lines: string[], fontSize: number): PortraitLayou
   return { width: columns * fontSize * CHAR_WIDTH, height: lines.length * lineHeight, lineHeight };
 }
 
-/** Lines of ASCII as <text> rows; spaces become NBSP so no renderer collapses them. */
-function portraitRows(lines: string[], x: number, y: number, fontSize: number, animate: boolean): string {
-  const { lineHeight } = portraitLayout(lines, fontSize);
-  const step = Math.min(0.04, 1.6 / Math.max(1, lines.length));
-  return lines
+/**
+ * Lines of ASCII as <text> rows; spaces become NBSP so no renderer collapses them.
+ *
+ * The typing reveal slides a background-coloured cover (with a cursor on its leading
+ * edge) off each line in character steps. The covers' resting position is already off
+ * the line, so with animation unsupported or reduced motion the portrait is simply
+ * shown; a clip keeps the covers from spilling over neighbouring content.
+ */
+function portraitRows(
+  lines: string[],
+  x: number,
+  y: number,
+  fontSize: number,
+  animate: boolean,
+  theme: SvgTheme,
+  id: string
+): { rows: string; style: string } {
+  const { lineHeight, width } = portraitLayout(lines, fontSize);
+  const text = lines
     .map((line, i) => {
       if (!line.trim()) return "";
-      const content = esc(line).replace(/ /g, " ");
+      const content = esc(line).replace(/ /g, "\u00A0");
       const length = (line.length * fontSize * CHAR_WIDTH).toFixed(1);
-      return `<text x="${x}" y="${(y + (i + 1) * lineHeight - lineHeight * 0.25).toFixed(1)}" textLength="${length}" lengthAdjust="spacing" xml:space="preserve" class="${animate ? "a " : ""}p"${delay(animate, i * step)}>${content}</text>`;
+      return `<text x="${x}" y="${(y + (i + 1) * lineHeight - lineHeight * 0.25).toFixed(1)}" textLength="${length}" lengthAdjust="spacing" xml:space="preserve" class="p">${content}</text>`;
     })
     .filter(Boolean)
     .join("\n  ");
+  if (!animate || !lines.length) return { rows: text, style: "" };
+
+  const columns = Math.max(1, ...lines.map((l) => l.length));
+  const step = Math.min(0.05, 2.4 / lines.length);
+  const lineDur = Math.max(0.12, step * 2);
+  const cw = fontSize * CHAR_WIDTH;
+  const covers = lines
+    .map((line, i) => {
+      if (!line.trim()) return "";
+      const top = (y + i * lineHeight).toFixed(1);
+      return `<g class="tw"${delay(true, i * step)}><rect x="${x}" y="${top}" width="${(width + cw).toFixed(1)}" height="${(lineHeight + 0.5).toFixed(1)}" fill="${theme.background}"/><rect x="${x}" y="${top}" width="${cw.toFixed(1)}" height="${lineHeight.toFixed(1)}" fill="${theme.key}" class="tc"${delay(true, i * step)}/></g>`;
+    })
+    .filter(Boolean)
+    .join("");
+  const off = (width + cw * 2).toFixed(1);
+  const style = `
+    @keyframes ${id}-type { from { transform: translateX(0); } to { transform: translateX(${off}px); } }
+    @keyframes ${id}-cursor { 0% { opacity: 0; } 1%, 100% { opacity: 1; } }
+    .tw { transform: translateX(${off}px); animation: ${id}-type ${lineDur.toFixed(2)}s steps(${Math.min(columns, 48)}) backwards; }
+    .tc { animation: ${id}-cursor ${lineDur.toFixed(2)}s linear backwards; }
+    @media (prefers-reduced-motion: reduce) { .tw, .tc { animation: none; } }`;
+  const clip = `<clipPath id="${id}-clip"><rect x="${x}" y="${y}" width="${width.toFixed(1)}" height="${(lines.length * lineHeight + 1).toFixed(1)}"/></clipPath>`;
+  return { rows: `${text}\n  ${clip}<g clip-path="url(#${id}-clip)">${covers}</g>`, style };
 }
 
 export function renderPortraitSvg(profile: ProfileConfig): string {
@@ -75,10 +112,11 @@ export function renderPortraitSvg(profile: ProfileConfig): string {
   const width = Math.ceil(layout.width + pad * 2);
   const height = Math.ceil(layout.height + pad * 2);
   const name = cleanText(profile.displayName) || "the developer";
+  const rows = portraitRows(ascii, pad, pad, fontSize, profile.animations, theme, "flp");
   return `${open(width, height, "fl-portrait", `ASCII portrait of ${name}`, `A monochrome ASCII-art portrait of ${name}, generated from a photo.`)}
-  ${styleBlock(theme, profile.animations, `\n    .p { font-size: ${fontSize}px; fill: ${theme.text}; }`)}
+  ${styleBlock(theme, profile.animations, `\n    .p { font-size: ${fontSize}px; fill: ${theme.text}; }${rows.style}`)}
   <rect width="${width}" height="${height}" rx="10" fill="${theme.background}"/>
-  ${portraitRows(ascii, pad, pad, fontSize, profile.animations)}
+  ${rows.rows}
 </svg>`;
 }
 
@@ -178,6 +216,11 @@ export function renderCardSvg(profile: ProfileConfig, username: string): string 
     }
   });
 
+  const portraitSvg =
+    portrait && pLayout
+      ? portraitRows(portrait, pad, bodyTop + Math.max(0, (infoHeight - pLayout.height) / 2), profile.portrait.fontSize, animate, theme, "flc")
+      : null;
+
   const name = cleanText(profile.displayName) || username;
   const summary = [
     cleanText(profile.title),
@@ -188,13 +231,13 @@ export function renderCardSvg(profile: ProfileConfig, username: string): string 
     .join(". ");
 
   return `${open(width, height, "fl-card", `${name}${profile.title ? ` — ${cleanText(profile.title)}` : ""}`, `Terminal-style developer card for ${name}. ${summary}`)}
-  ${styleBlock(theme, animate, pLayout ? `\n    .p { font-size: ${profile.portrait.fontSize}px; fill: ${theme.text}; }\n    text:not(.p) { font-size: ${fontSize}px; }` : `\n    text { font-size: ${fontSize}px; }`)}
+  ${styleBlock(theme, animate, pLayout ? `\n    .p { font-size: ${profile.portrait.fontSize}px; fill: ${theme.text}; }\n    text:not(.p) { font-size: ${fontSize}px; }${portraitSvg?.style ?? ""}` : `\n    text { font-size: ${fontSize}px; }`)}
   <rect x="0.5" y="0.5" width="${width - 1}" height="${height - 1}" rx="12" fill="${theme.background}" stroke="${theme.border}"/>
   <path d="M0.5 12.5a12 12 0 0 1 12-12h${width - 25}a12 12 0 0 1 12 12v${barH - 12}h-${width - 1}z" fill="${theme.chrome}"/>
   <line x1="0.5" y1="${barH + 0.5}" x2="${width - 0.5}" y2="${barH + 0.5}" stroke="${theme.border}"/>
   <circle cx="20" cy="17" r="5.5" fill="#EF4444"/><circle cx="38" cy="17" r="5.5" fill="#F59E0B"/><circle cx="56" cy="17" r="5.5" fill="#22C55E"/>
   <text x="${width / 2}" y="21.5" text-anchor="middle" class="muted" style="font-size:12px">flowlens — ~/profile</text>
-  ${portrait && pLayout ? portraitRows(portrait, pad, bodyTop + Math.max(0, (infoHeight - pLayout.height) / 2), profile.portrait.fontSize, animate) : ""}
+  ${portraitSvg?.rows ?? ""}
   ${rows.join("\n  ")}
 </svg>`;
 }
@@ -214,13 +257,45 @@ export function heatmapAlt(cal: ContributionCalendar): string {
   return `GitHub contribution calendar for @${cal.login}: ${cal.totalContributions.toLocaleString("en-US")} contributions from ${fmtDate(from)} to ${fmtDate(to)}`;
 }
 
-export function renderHeatmapSvg(cal: ContributionCalendar, profile: ProfileConfig): string {
-  const theme = THEMES[profile.theme];
-  const animate = profile.animations;
+export interface ContributionStats {
+  currentStreak: number;
+  longestStreak: number;
+  bestDay: { date: string; count: number } | null;
+}
+
+/** Streaks and best day, derived only from the calendar's own daily counts. */
+export function contributionStats(cal: ContributionCalendar): ContributionStats {
+  const days = cal.weeks.flat().slice().sort((a, b) => a.date.localeCompare(b.date));
+  let longest = 0;
+  let run = 0;
+  let best: ContributionStats["bestDay"] = null;
+  for (const d of days) {
+    run = d.count > 0 ? run + 1 : 0;
+    longest = Math.max(longest, run);
+    if (d.count > 0 && (!best || d.count > best.count)) best = { date: d.date, count: d.count };
+  }
+  let i = days.length - 1;
+  // Today isn't over yet, so an empty today doesn't break the streak.
+  if (i >= 0 && days[i].count === 0) i--;
+  let current = 0;
+  while (i >= 0 && days[i].count > 0) {
+    current++;
+    i--;
+  }
+  return { currentStreak: current, longestStreak: longest, bestDay: best };
+}
+
+const plural = (n: number, word: string) => `${n.toLocaleString("en-US")} ${word}${n === 1 ? "" : "s"}`;
+
+export type HeatmapOptions = Pick<ProfileConfig, "theme" | "animations">;
+
+export function renderHeatmapSvg(cal: ContributionCalendar, opts: HeatmapOptions): string {
+  const theme = THEMES[opts.theme];
+  const animate = opts.animations;
   const cell = 11;
   const step = 14;
   const left = 36;
-  const top = 58;
+  const top = 76;
   const weeks = cal.weeks;
   const width = left + weeks.length * step + 18;
   const height = top + 7 * step + 50;
@@ -272,16 +347,25 @@ export function renderHeatmapSvg(cal: ContributionCalendar, profile: ProfileConf
 
   const total = cal.totalContributions.toLocaleString("en-US");
   const fetched = fmtDate(cal.fetchedAt);
+  const stats = contributionStats(cal);
+  const statLine = [
+    `Current streak ${plural(stats.currentStreak, "day")}`,
+    `Longest streak ${plural(stats.longestStreak, "day")}`,
+    stats.bestDay && `Best day ${plural(stats.bestDay.count, "contribution")} (${fmtDate(stats.bestDay.date)})`,
+  ]
+    .filter(Boolean)
+    .join("  ·  ");
 
   return `${open(width, height, "fl-heat", heatmapAlt(cal), `Each square is one day, shaded by GitHub's own contribution level (see legend). Data is GitHub's contribution calendar, captured ${fetched}.`)}
   ${styleBlock(theme, animate)}
   <rect x="0.5" y="0.5" width="${width - 1}" height="${height - 1}" rx="12" fill="${theme.background}" stroke="${theme.border}"/>
   <text x="18" y="27" class="sans" style="font-size:14px;font-weight:600">${total} contributions</text>
   <text x="${width - 18}" y="27" text-anchor="end" class="muted sans" style="font-size:11px">${fmtDate(from)} – ${fmtDate(to)}</text>
+  <text x="18" y="47" class="muted sans" style="font-size:11px">${esc(statLine)}</text>
   ${months.join("\n  ")}
   ${weekdays}
   ${columns}
-  <text x="18" y="${legendY}" class="muted sans" style="font-size:10px">Source: GitHub contribution calendar · snapshot ${fetched}</text>
+  <text x="18" y="${legendY}" class="muted sans" style="font-size:10px">Source: GitHub contribution calendar · updated ${fetched}</text>
   <text x="${legendX - 6}" y="${legendY}" text-anchor="end" class="muted sans" style="font-size:10px">Less</text>
   ${legend}
   <text x="${legendX + 5 * step + 2}" y="${legendY}" class="muted sans" style="font-size:10px">More</text>

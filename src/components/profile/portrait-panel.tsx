@@ -165,6 +165,7 @@ export function PortraitPanel({
                 </select>
               </label>
               <Toggle checked={portrait.invert} disabled={!hasPhoto} onChange={(invert) => setPortrait({ invert })} label="Invert shading" />
+              <Toggle checked={portrait.enhance} disabled={!hasPhoto} onChange={(enhance) => setPortrait({ enhance })} label="Auto-level tones" />
             </div>
           </>
         )}

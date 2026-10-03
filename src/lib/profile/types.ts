@@ -24,6 +24,8 @@ export interface PortraitSettings {
   brightness: number;
   charset: PortraitCharset;
   invert: boolean;
+  /** Auto-level the photo's tones before shading (helps flat or dim photos). */
+  enhance: boolean;
   /** Font size of the portrait in the exported SVG, which sets its rendered width. */
   fontSize: number;
   /** Generated ASCII art. The source photo is never stored. */
@@ -51,6 +53,10 @@ export interface ProfileConfig {
   links: ProfileLink[];
   theme: ProfileTheme;
   animations: boolean;
+  /** Section headings styled as shell prompts, e.g. `octo@github ~ $ ./links.sh`. */
+  terminalHeadings: boolean;
+  /** Include a GitHub Action that re-renders the heatmap daily from GitHub's API. */
+  autoRefresh: boolean;
   sections: ProfileSections;
   portrait: PortraitSettings;
   /** Hand-edited README; null means "use the generated one". */
@@ -108,6 +114,8 @@ export function defaultProfile(user?: { username: string; displayName?: string; 
     links: user ? [{ label: "GitHub", url: user.profileUrl || `https://github.com/${user.username}` }] : [],
     theme: "flowlens",
     animations: true,
+    terminalHeadings: true,
+    autoRefresh: true,
     sections: { card: true, contributions: true, about: true, projects: true, skills: true, links: true },
     portrait: {
       enabled: false,
@@ -116,6 +124,7 @@ export function defaultProfile(user?: { username: string; displayName?: string; 
       brightness: 0,
       charset: "standard",
       invert: false,
+      enhance: true,
       fontSize: 7,
       ascii: [],
     },

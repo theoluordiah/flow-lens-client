@@ -71,6 +71,12 @@ export function StylePanel({ profile, update }: { profile: ProfileConfig; update
           label="Entrance animations"
           description="Pure CSS inside the SVG. Viewers who prefer reduced motion, and clients that don't animate, see the finished frame."
         />
+        <Toggle
+          checked={profile.terminalHeadings}
+          onChange={(terminalHeadings) => update((p) => ({ ...p, terminalHeadings }))}
+          label="Terminal-style headings"
+          description="Section titles become shell prompts, e.g. you@github ~ $ ./links.sh"
+        />
       </CardContent>
     </Card>
   );
@@ -119,12 +125,22 @@ export function SectionsPanel({
               </p>
               <p className="text-text-muted">
                 Real data from GitHub&apos;s contribution calendar, read with your FlowLens sign-in (no extra integration). The SVG is a
-                snapshot from {fmt(calendar.data.fetchedAt)}; export again to refresh it.
+                snapshot from {fmt(calendar.data.fetchedAt)}.
               </p>
               <p className="text-text-muted">
                 Because it&apos;s read with your own account, daily totals can include private contributions — only the counts appear,
                 never repository names. Turn the heatmap off if you&apos;d rather not publish them.
               </p>
+            </div>
+          )}
+          {profile.sections.contributions && (
+            <div className="mt-3 border-t border-border pt-3">
+              <Toggle
+                checked={profile.autoRefresh}
+                onChange={(autoRefresh) => update((p) => ({ ...p, autoRefresh }))}
+                label="Keep it fresh with a daily GitHub Action"
+                description="Adds a workflow to your profile repo that re-renders the heatmap each day from GitHub's API using the repo's own token. It reads only your public calendar (private counts only if you've enabled them on your profile)."
+              />
             </div>
           )}
           {calendar.status === "error" && (

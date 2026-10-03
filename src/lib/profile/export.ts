@@ -1,6 +1,7 @@
 import type { ContributionCalendar, ProfileConfig } from "./types";
 import { renderCardSvg, renderHeatmapSvg, renderPortraitSvg } from "./svg";
 import { ASSET_PATHS, generateReadme, includedAssets, type AssetKey } from "./readme";
+import { refreshFiles, type ExtraFile } from "./workflow";
 
 export interface ProfileAsset {
   key: AssetKey;
@@ -15,6 +16,8 @@ export interface ProfileExport {
   /** The user's hand-edited README when present, else the generated one. */
   readme: string;
   assets: ProfileAsset[];
+  /** Non-SVG files for the profile repo, e.g. the daily heatmap refresh workflow. */
+  extras: ExtraFile[];
 }
 
 export function buildProfileExport(
@@ -42,5 +45,6 @@ export function buildProfileExport(
   }
 
   const generatedReadme = generateReadme(input);
-  return { generatedReadme, readme: profile.readmeOverride ?? generatedReadme, assets };
+  const extras = used.has("contributions") && profile.autoRefresh ? refreshFiles(username, profile) : [];
+  return { generatedReadme, readme: profile.readmeOverride ?? generatedReadme, assets, extras };
 }

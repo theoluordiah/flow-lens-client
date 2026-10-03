@@ -2,9 +2,14 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { defaultProfile, type ContributionCalendar, type ProfileConfig } from "./types";
 import { escapeXml, safeUrl, validateSvg, wrapText, displayUrl } from "./sanitize";
-import { borderLuminance, luminanceToAscii, rowsFor, trimBlankEdges } from "./ascii";
-import { renderCardSvg, renderHeatmapSvg, renderPortraitSvg } from "./svg";
-import { generateReadme } from "./readme";
+import { borderLuminance, luminanceToAscii, rowsFor, tonalRange, trimBlankEdges } from "./ascii";
+import { contributionStats, renderCardSvg, renderHeatmapSvg, renderPortraitSvg } from "./svg";
+import { generateReadme, REFRESH_SCRIPT_PATH, REFRESH_WORKFLOW_PATH } from "./readme";
+import { isGitHubLogin, refreshFiles, refreshScript } from "./workflow";
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { spawnSync } from "node:child_process";
 import { buildProfileExport } from "./export";
 import { createZip, crc32 } from "./zip";
 
@@ -172,4 +177,105 @@ test("zip has valid signatures and CRCs", () => {
   assert.equal(view.getUint32(0, true), 0x04034b50);
   assert.equal(view.getUint32(zip.length - 22, true), 0x06054b50);
   assert.equal(view.getUint16(zip.length - 12, true), 2);
+});
+
+// ── Added with the reveal / refresh features ──────────────────────────────
+
+test("portrait typing reveal is CSS-only, clipped, and honors reduced motion", () => {
+  const portrait = { ...defaultProfile().portrait, enabled: true, ascii: ["@@@@", " .. "] };
+  const animated = renderPortraitSvg(sampleProfile({ portrait }));
+  assert.deepEqual(validateSvg(animated, wellFormed).problems, []);
+  assert.ok(animated.includes('clip-path="url(#flp-clip)"'));
+  assert.match(animated, /prefers-reduced-motion[^}]*\.tw, \.tc \{ animation: none; \}/);
+  assert.ok(!/<animate/.test(animated), "no SMIL: reduced-motion must be able to stop it");
+  const still = renderPortraitSvg(sampleProfile({ portrait, animations: false }));
+  assert.ok(!still.includes("tw"));
+  const card = renderCardSvg(sampleProfile({ portrait }), "octo");
+  assert.deepEqual(validateSvg(card, wellFormed).problems, []);
+  assert.ok(card.includes("flc-clip"));
+});
+
+test("auto-level stretches a dim photo's tonal range", () => {
+  const dim = [0.1, 0.15, 0.2, 0.25, 0.3];
+  const opts = { charset: "standard" as const, contrast: 1, brightness: 0, invert: false };
+  assert.deepEqual(tonalRange(dim), [0.1, 0.3]);
+  const [flat] = luminanceToAscii(dim, 5, 1, opts);
+  const [levelled] = luminanceToAscii(dim, 5, 1, { ...opts, autoLevel: true });
+  assert.equal(levelled[0], " ");
+  assert.equal(levelled[4], "@");
+  assert.notEqual(flat, levelled);
+});
+
+test("contributionStats derives streaks and best day from real counts only", () => {
+  const cal = sampleCalendar();
+  const days = ["2026-09-28", "2026-09-29", "2026-09-30", "2026-10-01", "2026-10-02", "2026-10-03"];
+  cal.weeks = [days.map((date, i) => ({ date, count: [3, 0, 2, 5, 1, 0][i], level: 1 }))];
+  const stats = contributionStats(cal);
+  assert.equal(stats.currentStreak, 3, "an empty today doesn't break the streak");
+  assert.equal(stats.longestStreak, 3);
+  assert.deepEqual(stats.bestDay, { date: "2026-10-01", count: 5 });
+  const svg = renderHeatmapSvg(cal, { theme: "flowlens", animations: false });
+  assert.ok(svg.includes("Current streak 3 days"));
+});
+
+test("README terminal headings and refresh note", () => {
+  const md = generateReadme({ profile: sampleProfile(), username: "octo", calendar: sampleCalendar() });
+  assert.ok(md.includes("## `octo@github ~ $ ./contributions.sh`"));
+  assert.ok(md.includes("refreshed daily"));
+  const plain = generateReadme({ profile: sampleProfile({ terminalHeadings: false, autoRefresh: false }), username: "octo", calendar: sampleCalendar() });
+  assert.ok(plain.includes("## Contributions"));
+  assert.ok(plain.includes("Snapshot of my GitHub contribution calendar"));
+});
+
+test("export includes the refresh workflow only with real heatmap data and a valid login", () => {
+  assert.deepEqual(buildProfileExport(sampleProfile(), "octo", null).extras, []);
+  const ex = buildProfileExport(sampleProfile(), "octo", sampleCalendar());
+  assert.deepEqual(ex.extras.map((f) => f.path), [REFRESH_WORKFLOW_PATH, REFRESH_SCRIPT_PATH]);
+  assert.ok(ex.extras[0].content.includes("secrets.GITHUB_TOKEN"));
+  assert.deepEqual(buildProfileExport(sampleProfile({ autoRefresh: false }), "octo", sampleCalendar()).extras, []);
+  assert.deepEqual(refreshFiles("bad login!", sampleProfile()), []);
+  assert.equal(isGitHubLogin("octo-cat"), true);
+  assert.equal(isGitHubLogin("-octo"), false);
+});
+
+test("committed refresh bundle matches the current renderer source", async () => {
+  const { bundleRefreshScript, OUTPUT } = await import("../../../scripts/gen-refresh-script.mjs");
+  assert.equal(readFileSync(OUTPUT, "utf8"), await bundleRefreshScript(), "run `npm run gen:refresh-script`");
+});
+
+function runRefresh(response: unknown, status = 200) {
+  const dir = mkdtempSync(join(tmpdir(), "flowlens-refresh-"));
+  mkdirSync(join(dir, "assets"));
+  writeFileSync(join(dir, "refresh.mjs"), refreshScript("octo", { theme: "phosphor", animations: true }));
+  const mock = `globalThis.fetch = async (url, init) => { globalThis.__req = { url, init }; return new Response(${JSON.stringify(JSON.stringify(response))}, { status: ${status} }); };`;
+  const run = spawnSync(process.execPath, ["--import", `data:text/javascript,${encodeURIComponent(mock)}`, "refresh.mjs"], {
+    cwd: dir,
+    env: { ...process.env, GITHUB_TOKEN: "test-token" },
+    encoding: "utf8",
+  });
+  const out = join(dir, "assets/flowlens-contributions.svg");
+  return { run, svg: existsSync(out) ? readFileSync(out, "utf8") : null };
+}
+
+test("exported refresh script renders real API data and refuses to fake it", () => {
+  const cal = sampleCalendar();
+  const ok = runRefresh({
+    data: { user: { contributionsCollection: {
+      startedAt: cal.from, endedAt: cal.to, hasAnyRestrictedContributions: false, restrictedContributionsCount: 0,
+      contributionCalendar: { totalContributions: 742, weeks: cal.weeks.map((w) => ({ contributionDays: w.map((d) => ({ date: d.date, contributionCount: d.count, contributionLevel: ["NONE", "FIRST_QUARTILE", "SECOND_QUARTILE", "THIRD_QUARTILE", "FOURTH_QUARTILE"][d.level] })) })) },
+    } } },
+  });
+  assert.equal(ok.run.status, 0, ok.run.stderr);
+  assert.ok(ok.svg?.includes("742 contributions"));
+  assert.ok(ok.svg?.includes("#39D353"), "uses the exported theme");
+  assert.deepEqual(validateSvg(ok.svg ?? "", wellFormed).problems, []);
+
+  const denied = runRefresh({ message: "Bad credentials" }, 401);
+  assert.notEqual(denied.run.status, 0);
+  assert.equal(denied.svg, null);
+  assert.match(denied.run.stderr, /HTTP 401/);
+
+  const missing = runRefresh({ data: { user: null } });
+  assert.notEqual(missing.run.status, 0);
+  assert.equal(missing.svg, null);
 });

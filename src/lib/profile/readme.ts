@@ -2,6 +2,9 @@ import type { ContributionCalendar, ProfileConfig } from "./types";
 import { cleanText, safeUrl } from "./sanitize";
 import { heatmapAlt } from "./svg";
 
+export const REFRESH_WORKFLOW_PATH = ".github/workflows/flowlens-heatmap.yml";
+export const REFRESH_SCRIPT_PATH = ".github/flowlens/refresh-heatmap.mjs";
+
 export const ASSET_PATHS = {
   card: "assets/flowlens-card.svg",
   portrait: "assets/flowlens-portrait.svg",
@@ -53,6 +56,8 @@ export function generateReadme(input: ReadmeInput): string {
   const { profile, username, calendar } = input;
   const name = cleanText(profile.displayName) || username;
   const assets = includedAssets(input);
+  const heading = (title: string, command: string) =>
+    profile.terminalHeadings ? `## \`${username}@github ~ $ ${command}\`` : `## ${title}`;
   const out: string[] = ["<!-- Generated with FlowLens Profile Builder. Edit freely. -->", "", `# Hi, I'm ${mdText(name)}`];
 
   if (profile.title.trim()) out.push("", `**${mdText(cleanText(profile.title))}**`);
@@ -64,14 +69,14 @@ export function generateReadme(input: ReadmeInput): string {
   }
 
   if (profile.sections.about && (profile.bio.trim() || profile.focus.trim())) {
-    out.push("", "## About me");
+    out.push("", heading("About me", "cat about.md"));
     if (profile.bio.trim()) out.push("", mdText(profile.bio.trim()));
     if (profile.focus.trim()) out.push("", `**Currently focused on:** ${mdText(cleanText(profile.focus))}`);
   }
 
   const projects = profile.projects.filter((p) => cleanText(p.name));
   if (profile.sections.projects && projects.length) {
-    out.push("", "## Featured projects", "");
+    out.push("", heading("Featured projects", "ls ~/projects"), "");
     for (const p of projects) {
       const url = safeUrl(p.url);
       const title = url ? `**[${mdLinkText(p.name)}](${mdUrl(url)})**` : `**${mdText(cleanText(p.name))}**`;
@@ -84,18 +89,20 @@ export function generateReadme(input: ReadmeInput): string {
   const skills = [...profile.languages, ...profile.stack].map(cleanText).filter(Boolean);
   const uniqueSkills = Array.from(new Set(skills));
   if (profile.sections.skills && uniqueSkills.length) {
-    out.push("", "## Languages & tools", "", uniqueSkills.map((s) => `\`${s.replace(/`/g, "'")}\``).join(" · "));
+    out.push("", heading("Languages & tools", "./stack.sh"), "", uniqueSkills.map((s) => `\`${s.replace(/`/g, "'")}\``).join(" · "));
   }
 
   if (assets.includes("contributions") && calendar) {
     const fetched = new Date(calendar.fetchedAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
     out.push(
       "",
-      "## Contributions",
+      heading("Contributions", "./contributions.sh"),
       "",
       `![${mdImageAlt(heatmapAlt(calendar))}](./${ASSET_PATHS.contributions})`,
       "",
-      `<sub>Snapshot of my GitHub contribution calendar taken ${fetched}.</sub>`
+      profile.autoRefresh
+        ? "<sub>Real data from GitHub, refreshed daily by a GitHub Action.</sub>"
+        : `<sub>Snapshot of my GitHub contribution calendar taken ${fetched}.</sub>`
     );
   }
 
@@ -103,7 +110,7 @@ export function generateReadme(input: ReadmeInput): string {
     .map((l) => ({ label: cleanText(l.label), url: safeUrl(l.url) }))
     .filter((l): l is { label: string; url: string } => Boolean(l.label && l.url));
   if (profile.sections.links && links.length) {
-    out.push("", "## Connect", "", links.map((l) => `[${mdLinkText(l.label)}](${mdUrl(l.url)})`).join(" · "));
+    out.push("", heading("Connect", "./links.sh"), "", links.map((l) => `[${mdLinkText(l.label)}](${mdUrl(l.url)})`).join(" · "));
   }
 
   out.push("");

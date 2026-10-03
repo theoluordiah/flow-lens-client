@@ -54,7 +54,14 @@ self-contained SVGs plus `README.md` (individually or as one `.zip`).
   or export. Animations are CSS inside the SVG with a `prefers-reduced-motion` fallback, and
   every animated element is visible in its base style, so non-animating clients show the
   final frame.
+- **Daily refresh (optional)**: the export can include `.github/workflows/flowlens-heatmap.yml`
+  plus `.github/flowlens/refresh-heatmap.mjs` for the user's profile repo. It re-renders the
+  heatmap each day from GitHub's GraphQL API with that repo's own `GITHUB_TOKEN` (public
+  calendar only) and leaves the old SVG untouched if GitHub can't be reached.
+  The script is the real heatmap renderer bundled by esbuild — after changing
+  `src/lib/profile/svg.ts`, run `npm run gen:refresh-script` (a unit test fails if the
+  committed bundle is stale).
 - FlowLens never commits to the user's GitHub repositories.
 
-No new environment variables. `npm test` runs the generator unit tests (`tsx --test`;
-`tsx` is the only new dev dependency).
+No new environment variables. `npm test` runs the generator unit tests (`tsx --test`).
+New dev dependencies: `tsx` (tests) and `esbuild` (refresh-script bundling).

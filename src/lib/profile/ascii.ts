@@ -26,6 +26,8 @@ export interface AsciiOptions {
    * wants bright = dense, so callers XOR this with the theme's lightness.
    */
   invert: boolean;
+  /** Stretch the photo's own tonal range (2nd–98th percentile) to full black–white first. */
+  autoLevel?: boolean;
 }
 
 export const MAX_PORTRAIT_ROWS = 120;
@@ -46,6 +48,9 @@ export function rowsFor(columns: number, width: number, height: number): number 
 export function luminanceToAscii(lum: ArrayLike<number>, width: number, height: number, opts: AsciiOptions): string[] {
   const ramp = CHARSET_RAMPS[opts.charset] ?? CHARSET_RAMPS.standard;
   const last = ramp.length - 1;
+  const [lo, hi] = opts.autoLevel ? tonalRange(lum) : [0, 1];
+  const span = hi - lo > 0.05 ? hi - lo : 1;
+  const base = hi - lo > 0.05 ? lo : 0;
   const lines: string[] = [];
   for (let y = 0; y < height; y++) {
     let line = "";
@@ -55,6 +60,7 @@ export function luminanceToAscii(lum: ArrayLike<number>, width: number, height: 
         line += " ";
         continue;
       }
+      v = (v - base) / span;
       v = (v - 0.5) * opts.contrast + 0.5 + opts.brightness;
       v = Math.min(1, Math.max(0, v));
       if (opts.invert) v = 1 - v;
@@ -63,6 +69,16 @@ export function luminanceToAscii(lum: ArrayLike<number>, width: number, height: 
     lines.push(line);
   }
   return trimBlankEdges(lines);
+}
+
+/** 2nd and 98th percentile of the opaque cells, so a few specular pixels don't set the range. */
+export function tonalRange(lum: ArrayLike<number>): [number, number] {
+  const values: number[] = [];
+  for (let i = 0; i < lum.length; i++) if (!Number.isNaN(lum[i])) values.push(lum[i]);
+  if (!values.length) return [0, 1];
+  values.sort((a, b) => a - b);
+  const at = (q: number) => values[Math.min(values.length - 1, Math.floor(q * values.length))];
+  return [at(0.02), at(0.98)];
 }
 
 /** Drops fully blank rows at the top and bottom so the SVG has no dead space. */

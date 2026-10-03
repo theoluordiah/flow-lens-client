@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Check, Copy, FileArchive, FileCode2, FileText, ExternalLink } from "lucide-react";
+import { Check, Copy, FileArchive, FileCode2, FileText, ExternalLink, Workflow } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { saveBlob } from "@/lib/download-card";
@@ -28,7 +28,11 @@ export function ExportPanel({ output, username }: { output: ProfileExport; usern
   };
 
   const downloadZip = () => {
-    const zip = createZip([{ path: "README.md", content: output.readme }, ...assets.map((a) => ({ path: a.path, content: a.svg }))]);
+    const zip = createZip([
+      { path: "README.md", content: output.readme },
+      ...assets.map((a) => ({ path: a.path, content: a.svg })),
+      ...output.extras,
+    ]);
     saveBlob(new Blob([zip.slice().buffer], { type: "application/zip" }), `${username}-profile-readme.zip`);
   };
 
@@ -66,6 +70,17 @@ export function ExportPanel({ output, username }: { output: ProfileExport; usern
               <FileCode2 /> {fileName(a.path)}
             </Button>
           ))}
+          {output.extras.map((f) => (
+            <Button
+              key={f.path}
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => saveBlob(new Blob([f.content], { type: "text/plain;charset=utf-8" }), fileName(f.path))}
+            >
+              <Workflow /> {fileName(f.path)}
+            </Button>
+          ))}
         </div>
         {copyError && <p className="text-[11px] text-error">Your browser blocked clipboard access. Use the README.md download instead.</p>}
 
@@ -81,14 +96,29 @@ export function ExportPanel({ output, username }: { output: ProfileExport; usern
               </a>
             </li>
             <li>
-              Unzip the download into the repository root, keeping the <code className="font-mono">assets/</code> folder next to{" "}
-              <code className="font-mono">README.md</code>.
+              Unzip the download into the repository root, keeping the <code className="font-mono">assets/</code>
+              {output.extras.length > 0 && (
+                <>
+                  {" "}and <code className="font-mono">.github/</code>
+                </>
+              )}{" "}
+              folder{output.extras.length > 0 ? "s" : ""} next to <code className="font-mono">README.md</code>.
             </li>
             <li>Commit and push, then open github.com/{username}.</li>
+            {output.extras.length > 0 && (
+              <li>
+                Optional: open the repo&apos;s <strong>Actions</strong> tab and run &ldquo;Refresh FlowLens heatmap&rdquo; once to check it works.
+                After that it runs daily. GitHub may pause scheduled workflows in repositories with no activity for 60 days;
+                re-enable it from the same tab if that happens.
+              </li>
+            )}
           </ol>
           <p className="mt-3 text-text-muted">
             Animations run inside the SVGs and play in most browsers; some GitHub clients (such as the mobile apps) may show the static
-            final frame instead. The contribution heatmap is a snapshot — re-export to update it.
+            final frame instead.{" "}
+            {output.extras.length > 0
+              ? "The heatmap refreshes itself daily via the included workflow."
+              : "The contribution heatmap is a snapshot — re-export to update it."}
           </p>
         </div>
       </CardContent>
